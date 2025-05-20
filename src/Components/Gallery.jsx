@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 // import img1 from '../Images/1.jpg';
 // import img2 from '../Images/2.jpg';
 // import img3 from '../Images/3.jpg';
@@ -37,6 +38,8 @@ const Gallery = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMouseOver, setIsMouseOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  let [fullyLoaded,setFullyLoaded]=useState(false)
+
 
   useEffect(() => {
     const checkMobile = () => {
@@ -47,6 +50,28 @@ const Gallery = () => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+  let loaded = 0;
+  images.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      loaded += 1;
+      if (loaded === images.length) {
+        setFullyLoaded(true);
+      }
+    };
+    img.onerror = () => {
+      // still count error as "loaded" to prevent spinner freeze
+      loaded += 1;
+      if (loaded === images.length) {
+        setFullyLoaded(true);
+      }
+    };
+  });
+}, []);
+
 
   const getVisibleImages = () => {
     if (isMobile) {
@@ -71,7 +96,7 @@ const Gallery = () => {
 
   useEffect(() => {
     let interval;
-    if (!isMouseOver) {
+    if (!isMouseOver && fullyLoaded) {
       interval = setInterval(() => {
         nextImage();
       }, 5000);
@@ -82,8 +107,9 @@ const Gallery = () => {
         clearInterval(interval);
       }
     };
-  }, [isMouseOver]);
+  }, [isMouseOver,fullyLoaded]);
 
+   
   return (
     <section id="portfolio" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -94,6 +120,10 @@ const Gallery = () => {
             onMouseEnter={() => setIsMouseOver(true)}
             onMouseLeave={() => setIsMouseOver(false)}
           >
+          {!fullyLoaded ? ( <div className="flex justify-center items-center h-96">
+            <Loader2 className="animate-spin w-10 h-10 text-blue-600" />
+          </div>):(
+            <>
             <div className={`flex justify-center ${isMobile ? 'p-0' : 'gap-4 p-4'}`}>
               {getVisibleImages().map(({ src, index }, arrayIndex) => (
                 <div
@@ -108,7 +138,6 @@ const Gallery = () => {
                   <img
                     src={src}
                     alt={`Gallery ${index + 1}`}
-                    loading="lazy"
                     className={`w-full h-full object-cover  ${isMobile
                         ? 'rounded-none'
                         : `rounded-lg shadow-lg transition-all duration-300 ${arrayIndex === 1 ? 'scale-100 shadow-xl' : 'scale-95'
@@ -155,7 +184,9 @@ const Gallery = () => {
                 />
               ))}
             </div>
-          </div>
+            </>
+          ) }
+          </div> 
         </div>
         </div>
     </section>
